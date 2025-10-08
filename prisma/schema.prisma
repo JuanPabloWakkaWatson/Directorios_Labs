@@ -1,0 +1,109 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Laboratory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  logo        String?
+  location    String?
+  email       String?
+  phone       String?
+  website     String?
+  
+  // Redes sociales
+  facebook    String?
+  twitter     String?
+  instagram   String?
+  linkedin    String?
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  users       User[]
+  posts       Post[]
+  events      Event[]
+  
+  @@map("laboratories")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String
+  password     String
+  role         Role        @default(LAB_ADMIN)
+  
+  laboratoryId String
+  laboratory   Laboratory  @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  posts        Post[]
+  events       Event[]
+  
+  @@map("users")
+}
+
+model Post {
+  id           String      @id @default(cuid())
+  title        String
+  slug         String
+  content      String      @db.Text
+  excerpt      String?
+  image        String?
+  published    Boolean     @default(false)
+  
+  authorId     String
+  author       User        @relation(fields: [authorId], references: [id])
+  
+  laboratoryId String
+  laboratory   Laboratory  @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  publishedAt  DateTime?
+  
+  @@unique([laboratoryId, slug])
+  @@map("posts")
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  title        String
+  description  String      @db.Text
+  location     String?
+  startDate    DateTime
+  endDate      DateTime?
+  image        String?
+  isPublic     Boolean     @default(true)
+  
+  organizerId  String
+  organizer    User        @relation(fields: [organizerId], references: [id])
+  
+  laboratoryId String
+  laboratory   Laboratory  @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  @@map("events")
+}
+
+enum Role {
+  ADMIN
+  LAB_ADMIN
+  LAB_EDITOR
+}
